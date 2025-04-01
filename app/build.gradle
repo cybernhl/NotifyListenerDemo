@@ -3,13 +3,15 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
-
+    compileSdk 35
+    buildFeatures {
+        viewBinding true
+    }
     defaultConfig {
+        namespace "com.llw.notify"
         applicationId "com.llw.notify"
-        minSdkVersion 21
-        targetSdkVersion 30
+        minSdk 21
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
