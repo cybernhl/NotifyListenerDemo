@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
 import android.view.View;
 import android.widget.TextView;
@@ -46,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
      */
     public void requestPermission(View view) {
         if (!isNLServiceEnabled()) {
-            Intent intent = new Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS");
+            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
             startActivityForResult(intent, REQUEST_CODE);
         } else {
             showMsg("通知服务已开启");
@@ -74,9 +75,6 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
         PackageManager pm = getPackageManager();
         pm.setComponentEnabledSetting(new ComponentName(getApplicationContext(), NotifyService.class),
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
-
-        pm.setComponentEnabledSetting(new ComponentName(getApplicationContext(), NotifyService.class),
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
 
 
