@@ -21,22 +21,25 @@ import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
 import static com.llw.notify.NotifyHelper.*;
 
+import com.llw.notify.databinding.ActivityMainBinding;
+
 public class MainActivity extends AppCompatActivity implements NotifyListener {
-
+    private ActivityMainBinding binding;
+    private CustomAdapter adapter = new CustomAdapter();
     private static final int REQUEST_CODE = 9527;
-
-    private TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        textView = findViewById(R.id.textView);
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        View view = binding.getRoot();
+        setContentView(view);
         NotifyHelper.getInstance().setNotifyListener(this);
     }
 
@@ -99,72 +102,49 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
     /**
      * 收到通知
      *
-     * @param type 通知类型
-     */
-    @Override
-    public void onReceiveMessage(int type) {
-        switch (type) {
-            case N_MESSAGE:
-                textView.setText("收到短信消息");
-                break;
-            case N_CALL:
-                textView.setText("收到来电消息");
-                break;
-            case N_WX:
-                textView.setText("收到微信消息");
-                break;
-            case N_QQ:
-                textView.setText("收到QQ消息");
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * 移除通知
-     *
-     * @param type 通知类型
-     */
-    @Override
-    public void onRemovedMessage(int type) {
-        switch (type) {
-            case N_MESSAGE:
-                textView.setText("移除短信消息");
-                break;
-            case N_CALL:
-                textView.setText("移除来电消息");
-                break;
-            case N_WX:
-                textView.setText("移除微信消息");
-                break;
-            case N_QQ:
-                textView.setText("移除QQ消息");
-                break;
-            default:
-                break;
-        }
-    }
-
-    /**
-     * 收到通知
-     *
      * @param sbn 状态栏通知
      */
     @Override
     public void onReceiveMessage(StatusBarNotification sbn) {
-        if (sbn.getNotification() == null) return;
-        //消息内容
-        String msgContent = "";
-        if (sbn.getNotification().tickerText != null) {
-            msgContent = sbn.getNotification().tickerText.toString();
+        final String applicationid = sbn.getPackageName();
+        final long posttime = sbn.getPostTime();
+        final String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINESE).format(new Date(posttime));
+        final Bundle bundle = sbn.getNotification().extras;
+        final StringBuilder sb = new StringBuilder();
+        final Set<String> keys = bundle.keySet();
+        if (keys != null && !keys.isEmpty()) {
+            for (String key : keys) {
+                try {
+                    Object obj = bundle.get(key);
+                    String value;
+                    if (obj != null) {
+                        value = obj.toString()
+                                .replace("\n", "\\n")
+                                .replace("\t", "\\t");
+                        value = value.isEmpty() ? "[empty]" : value;
+                    } else {
+                        value = "null";
+                    }
+                    sb.append("  ")
+                            .append(key)
+                            .append(": ")
+                            .append(value)
+                            .append("\n");
+                } catch (Exception e) {
+                    final String errorMsg = e.getMessage() != null ?
+                            e.getMessage().replace("\n", " ") : "Unknown error";
+                    sb.append("  ")
+                            .append(key)
+                            .append(": [ERROR] ")
+                            .append(errorMsg)
+                            .append("\n");
+                }
+            }
         }
-
-        //消息时间
-        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINESE).format(new Date(sbn.getPostTime()));
-        textView.setText(String.format(Locale.getDefault(),
+        final String msgContent = String.format(Locale.getDefault(),
                 "应用包名：%s\n消息内容：%s\n消息时间：%s\n",
-                sbn.getPackageName(), msgContent, time));
+                sbn.getPackageName(), sb, time);
+        adapter.addContent(msgContent);
     }
 
     /**
@@ -174,6 +154,12 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
      */
     @Override
     public void onRemovedMessage(StatusBarNotification sbn) {
-        textView.setText("通知移除");
+
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        binding.list.setAdapter(adapter);
     }
 }

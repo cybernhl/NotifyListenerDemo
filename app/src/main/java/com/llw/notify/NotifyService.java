@@ -36,28 +36,6 @@ public class NotifyService extends NotificationListenerService {
     @Override
     public void onNotificationPosted(StatusBarNotification sbn) {
         NotifyHelper.getInstance().onReceive(sbn);
-        /*switch (sbn.getPackageName()) {
-            case MESSAGES:
-            case MMS:
-            case HONOR_MMS:
-                Log.d(TAG, "收到短信");
-                NotifyHelper.getInstance().onReceive(N_MESSAGE);
-                break;
-            case QQ:
-                Log.d(TAG, "收到QQ消息");
-                NotifyHelper.getInstance().onReceive(N_QQ);
-                break;
-            case WX:
-                Log.d(TAG, "收到微信消息");
-                NotifyHelper.getInstance().onReceive(N_WX);
-                break;
-            case IN_CALL:
-                Log.d(TAG, "收到来电");
-                NotifyHelper.getInstance().onReceive(N_CALL);
-                break;
-            default:
-                break;
-        }*/
     }
 
     /**
@@ -68,28 +46,6 @@ public class NotifyService extends NotificationListenerService {
     @Override
     public void onNotificationRemoved(StatusBarNotification sbn) {
         NotifyHelper.getInstance().onRemoved(sbn);
-        /*switch (sbn.getPackageName()) {
-            case MESSAGES:
-            case MMS:
-            case HONOR_MMS:
-                Log.d(TAG, "移除短信");
-                NotifyHelper.getInstance().onRemoved(N_MESSAGE);
-                break;
-            case QQ:
-                Log.d(TAG, "移除QQ消息");
-                NotifyHelper.getInstance().onRemoved(N_QQ);
-                break;
-            case WX:
-                Log.d(TAG, "移除微信消息");
-                NotifyHelper.getInstance().onRemoved(N_WX);
-                break;
-            case IN_CALL:
-                Log.d(TAG, "移除来电");
-                NotifyHelper.getInstance().onRemoved(N_CALL);
-                break;
-            default:
-                break;
-        }*/
     }
 
     /**
