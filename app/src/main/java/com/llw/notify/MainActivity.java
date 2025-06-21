@@ -1,7 +1,11 @@
 package com.llw.notify;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
+
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -23,10 +27,22 @@ import idv.neo.service.notificationlistener.NotifyListener;
 import idv.neo.service.notificationlistener.NotifyService;
 
 public class MainActivity extends AppCompatActivity implements NotifyListener {
-    private final String TAG="MainActivity";
+    private final String TAG = "MainActivity";
     private ActivityMainBinding binding;
     private CustomAdapter adapter = new CustomAdapter();
-    private static final int REQUEST_CODE = 9527;
+    private ActivityResultLauncher<Intent> resultLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode()==Activity.RESULT_CANCELED){
+                    if (isNLServiceEnabled()) {
+                        showMsg("通知服务已开启");
+                        toggleNotificationListenerService();
+                    } else {
+                        showMsg("通知服务未开启");
+                    }
+                }
+            }
+    );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +60,7 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
      */
     public void requestPermission(View view) {
         if (!isNLServiceEnabled()) {
-            Intent intent = new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS);
-            startActivityForResult(intent, REQUEST_CODE);
+            resultLauncher.launch(new Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS));
         } else {
             showMsg("通知服务已开启");
             toggleNotificationListenerService();
@@ -76,21 +91,6 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
         pm.setComponentEnabledSetting(new ComponentName(getApplicationContext(), NotifyService.class),
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
-
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE) {
-            if (isNLServiceEnabled()) {
-                showMsg("通知服务已开启");
-                toggleNotificationListenerService();
-            } else {
-                showMsg("通知服务未开启");
-            }
-        }
-    }
-
 
     private void showMsg(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
