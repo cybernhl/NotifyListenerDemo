@@ -8,12 +8,16 @@ import android.service.notification.StatusBarNotification;
  * @date 2021/8/12 11:27
  */
 public class NotifyHelper {
-    private static NotifyHelper instance;
+    private static volatile NotifyHelper instance;
     private NotifyListener notifyListener;
 
     public static NotifyHelper getInstance() {
         if (instance == null) {
-            instance = new NotifyHelper();
+            synchronized (NotifyHelper.class) {
+                if (instance == null) {
+                    instance = new NotifyHelper();
+                }
+            }
         }
         return instance;
     }

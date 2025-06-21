@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,6 +31,7 @@ import static com.llw.notify.NotifyHelper.*;
 import com.llw.notify.databinding.ActivityMainBinding;
 
 public class MainActivity extends AppCompatActivity implements NotifyListener {
+    private final String TAG="MainActivity";
     private ActivityMainBinding binding;
     private CustomAdapter adapter = new CustomAdapter();
     private static final int REQUEST_CODE = 9527;
@@ -78,6 +80,9 @@ public class MainActivity extends AppCompatActivity implements NotifyListener {
         PackageManager pm = getPackageManager();
         pm.setComponentEnabledSetting(new ComponentName(getApplicationContext(), NotifyService.class),
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP);
+
+        pm.setComponentEnabledSetting(new ComponentName(getApplicationContext(), NotifyService.class),
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
     }
 
 

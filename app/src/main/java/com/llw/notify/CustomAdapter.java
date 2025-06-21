@@ -12,13 +12,14 @@ import java.util.List;
 
 public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder> {
 
-    private List<String> localDataSet=new ArrayList<>();
-  @Override
+    private List<String> localDataSet = new ArrayList<>();
+
+    @Override
     public int getItemCount() {
         return localDataSet.size();
     }
 
-    public void addContent(String value){
+    public void addContent(String value) {
         localDataSet.add(value);
         notifyDataSetChanged();
     }
@@ -31,10 +32,11 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
 
     @Override
     public void onBindViewHolder(ViewHolder holder, final int position) {
-  holder.tv.setText(localDataSet.get( position));
+        holder.tv.setText(localDataSet.get(position));
     }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
-         TextView tv;
+        TextView tv;
 
         public ViewHolder(View view) {
             super(view);

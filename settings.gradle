@@ -1,2 +1,56 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
+        mavenCentral()
+        maven { url 'https://maven.pkg.jetbrains.space/public/p/compose/dev' }
+        maven { url 'https://api.xposed.info/' }
+        maven { url "https://maven.aliyun.com/repository/jcenter" }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://www.dfki.uni-kl.de/artifactory/libs-releases/' }
+        maven { url 'https://s3.amazonaws.com/repo.commonsware.com' }
+        maven { url 'https://jogamp.org/deployment/maven' }
+        maven { url 'https://raw.githubusercontent.com/cybernhl/maven-repository/master/' }
+    }
+    plugins {
+
+    }
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        google()
+        maven { url 'https://maven.pkg.jetbrains.space/public/p/compose/dev' }
+        maven { url 'https://api.xposed.info/' }
+        maven { url "https://maven.aliyun.com/repository/jcenter" }
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://www.dfki.uni-kl.de/artifactory/libs-releases/' }
+        maven { url 'https://s3.amazonaws.com/repo.commonsware.com' }
+        maven { url 'https://jogamp.org/deployment/maven' }
+        maven { url 'https://raw.githubusercontent.com/cybernhl/maven-repository/master/' }
+    }
+}
+
 rootProject.name = "NotifyListenerDemo"
 include ':app'
+
+def notificationlistenerDir = file("./notificationlistener")
+if (notificationlistenerDir.exists()) {
+    include ':notificationlistener'
+    project(':notificationlistener').projectDir = notificationlistenerDir
+}else {
+    println "WARNING: 'notificationlistenerDir' directory not found. If using submodules, run: git submodule update --init \n now try use Composite Build"
+    notificationlistenerDir = file('../notificationlistener')
+    if (notificationlistenerDir.exists()) {
+        includeBuild notificationlistenerDir
+    } else {
+        println "WARNING: External notificationlistenerDir path not found at ${notificationlistenerDir}"
+    }
+}
