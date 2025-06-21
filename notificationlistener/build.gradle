@@ -3,7 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
-group = "com.llw.notify"
+group = "idv.neo.service.notificationlistener"
 version = "1.0.0"
 // 设置发布类型 (0 = 多artifact方式, 1 = 单artifact方式)
 ext.publishType = 1  // 这里设置为1，表示使用单artifact方式
@@ -12,7 +12,7 @@ android {
     compileSdk 35
 
     defaultConfig {
-        namespace "com.llw.notify"
+        namespace "idv.neo.service.notificationlistener"
         minSdkVersion 21
         targetSdk 35
         versionCode 1
