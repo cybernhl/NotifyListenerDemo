@@ -1,10 +1,11 @@
 plugins {
     id 'com.android.library'
-    id 'maven-publish'
 }
 
 group = "com.llw.notify"
 version = "1.0.0"
+// 设置发布类型 (0 = 多artifact方式, 1 = 单artifact方式)
+ext.publishType = 1  // 这里设置为1，表示使用单artifact方式
 
 android {
     compileSdk 35
@@ -49,66 +50,4 @@ dependencies {
 
 }
 
-afterEvaluate {
-    def variants = android.libraryVariants.findAll { variant ->
-        variant.buildType.name == "release" || variant.buildType.name == "debug"
-    }
-
-    if (variants.isEmpty()) {
-        logger.warn("No variants found for publishing.")
-        return
-    }
-
-    // 创建单个发布配置（所有变体共享同一个 Maven 坐标）
-    publishing {
-        publications {
-            create("libraryPublication", MavenPublication) {
-                groupId = project.group
-                artifactId = project.name  // 只使用项目名称作为 artifactId
-                version = android.defaultConfig.versionName
-
-                // 为每个变体添加一个 artifact
-                variants.each { variant ->
-                    // 获取实际生成的 AAR 文件
-                    def outputFile = variant.outputs.first().outputFile
-
-                    println "Adding variant: ${variant.name}"
-                    println "AAR file: ${outputFile}"
-
-                    // 使用变体名称作为分类器(classifier)
-                    artifact(outputFile) {
-                        classifier = variant.name.toLowerCase()
-                        builtBy variant.assembleProvider.get()
-                    }
-                }
-
-                // 添加 POM 依赖
-                pom.withXml {
-                    def dependenciesNode = asNode().appendNode('dependencies')
-                    configurations.implementation.allDependencies.each { dep ->
-                        if (dep.group != null && dep.name != null && dep.version != null) {
-                            def dependencyNode = dependenciesNode.appendNode('dependency')
-                            dependencyNode.appendNode('groupId', dep.group)
-                            dependencyNode.appendNode('artifactId', dep.name)
-                            dependencyNode.appendNode('version', dep.version)
-                        }
-                    }
-                }
-            }
-        }
-
-        // 配置仓库
-        repositories {
-            mavenLocal()
-        }
-    }
-}
-
-tasks.withType(PublishToMavenRepository) { publishTask ->
-    if (publishTask.publication?.name == "libraryPublication") {
-        dependsOn tasks.matching { task ->
-            task.name.startsWith('assemble') &&
-                    (task.name.endsWith('Debug') || task.name.endsWith('Release'))
-        }
-    }
-}
+apply from: 'install.gradle'

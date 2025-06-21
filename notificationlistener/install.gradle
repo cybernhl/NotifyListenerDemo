@@ -1,0 +1,164 @@
+apply plugin: 'maven-publish'
+
+// 定义发布类型变量，默认值为 0 (多artifact方式)
+def publishType = project.hasProperty('publishType') ? project.publishType : 0
+
+afterEvaluate {
+    // 获取所有变体
+    def variants = android.libraryVariants.findAll { variant ->
+        variant.buildType.name == "release" || variant.buildType.name == "debug"
+    }
+
+    if (variants.isEmpty()) {
+        logger.warn("No variants found for publishing.")
+        return
+    }
+
+    // 根据 publishType 的值选择发布策略
+    if (publishType == 0) {
+        // 多artifact方式（每个变体独立发布）
+        logger.lifecycle("Using publishType=0 (multi-artifact publishing)")
+
+        variants.each { variant ->
+            // 获取实际生成的 AAR 文件
+            def outputFile = variant.outputs.first().outputFile
+
+            println "Publishing variant: ${variant.name}"
+            println "AAR file: ${outputFile}"
+
+            // 动态创建发布配置
+            publishing {
+                publications {
+                    create("${variant.name}Publication", MavenPublication) {
+                        groupId = project.group
+                        artifactId = "${project.name}-${variant.name.toLowerCase()}"
+                        version = android.defaultConfig.versionName
+
+                        // 使用实际生成的 AAR 文件
+                        artifact(outputFile) {
+                            builtBy variant.assembleProvider.get()
+                        }
+
+                        // 添加 POM 依赖
+                        pom.withXml {
+                            def dependenciesNode = asNode().appendNode('dependencies')
+                            configurations.implementation.allDependencies.each { dep ->
+                                if (dep.group != null && dep.name != null && dep.version != null) {
+                                    def dependencyNode = dependenciesNode.appendNode('dependency')
+                                    dependencyNode.appendNode('groupId', dep.group)
+                                    dependencyNode.appendNode('artifactId', dep.name)
+                                    dependencyNode.appendNode('version', dep.version)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 配置仓库
+        publishing {
+            repositories {
+                mavenLocal()
+            }
+        }
+
+        // 确保发布任务依赖构建任务
+        tasks.withType(PublishToMavenRepository) { publishTask ->
+            def publicationName = publishTask.publication?.name
+            if (publicationName && publicationName.endsWith('Publication')) {
+                def variantName = publicationName.replace('Publication', '')
+                def assembleTask = tasks.findByName("assemble${variantName.capitalize()}")
+                if (assembleTask) {
+                    dependsOn assembleTask
+                } else {
+                    logger.warn("Assemble task for variant '${variantName}' not found.")
+                }
+            }
+        }
+
+        //// 添加发布到本地Maven的快捷任务
+//        task publishAllToMavenLocal {
+//            dependsOn tasks.withType(PublishToMavenRepository).findAll {
+//                it.name.startsWith('publish') && it.name.endsWith('PublicationToMavenLocal')
+//            }
+//            group = 'publishing'
+//            description = 'Publish all variants to local Maven repository'
+//        }
+
+    } else if (publishType == 1) {
+        // 单artifact方式（所有变体共享同一个坐标）
+        logger.lifecycle("Using publishType=1 (single-artifact publishing)")
+
+        // 创建单个发布配置（所有变体共享同一个 Maven 坐标）
+        publishing {
+            publications {
+                create("libraryPublication", MavenPublication) {
+                    groupId = project.group
+                    artifactId = project.name  // 只使用项目名称作为 artifactId
+                    version = android.defaultConfig.versionName
+
+                    // 为每个变体添加一个 artifact
+                    variants.each { variant ->
+                        // 获取实际生成的 AAR 文件
+                        def outputFile = variant.outputs.first().outputFile
+
+                        println "Adding variant: ${variant.name}"
+                        println "AAR file: ${outputFile}"
+
+                        // 使用变体名称作为分类器(classifier)
+                        artifact(outputFile) {
+                            classifier = variant.name.toLowerCase()
+                            builtBy variant.assembleProvider.get()
+                        }
+                    }
+
+                    // 添加 POM 依赖
+                    pom.withXml {
+                        def dependenciesNode = asNode().appendNode('dependencies')
+                        configurations.implementation.allDependencies.each { dep ->
+                            if (dep.group != null && dep.name != null && dep.version != null) {
+                                def dependencyNode = dependenciesNode.appendNode('dependency')
+                                dependencyNode.appendNode('groupId', dep.group)
+                                dependencyNode.appendNode('artifactId', dep.name)
+                                dependencyNode.appendNode('version', dep.version)
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 配置仓库
+            repositories {
+                mavenLocal()
+            }
+        }
+
+        // 确保发布任务依赖构建任务
+        tasks.withType(PublishToMavenRepository) { publishTask ->
+            if (publishTask.publication?.name == "libraryPublication") {
+                dependsOn tasks.matching { task ->
+                    task.name.startsWith('assemble') &&
+                            (task.name.endsWith('Debug') || task.name.endsWith('Release'))
+                }
+            }
+        }
+
+        //// 添加发布到本地Maven的快捷任务
+//        task publishToMavenLocal {
+//            dependsOn tasks.withType(PublishToMavenRepository).findAll {
+//                it.name == 'publishLibraryPublicationToMavenLocal'
+//            }
+//            group = 'publishing'
+//            description = 'Publish all variants to local Maven repository'
+//        }
+    } else {
+        logger.error("Unsupported publishType value: ${publishType}. Supported values are 0 or 1.")
+    }
+}
+
+// 可选：创建源码JAR任务（适用于两种发布类型）
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    archiveClassifier = 'sources'
+}
