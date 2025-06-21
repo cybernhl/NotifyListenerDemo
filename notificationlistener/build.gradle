@@ -54,65 +54,61 @@ afterEvaluate {
         variant.buildType.name == "release" || variant.buildType.name == "debug"
     }
 
-    variants.each { variant ->
-        // 获取实际生成的 AAR 文件
-        def outputFile = variant.outputs.first().outputFile
+    if (variants.isEmpty()) {
+        logger.warn("No variants found for publishing.")
+        return
+    }
 
-        println "Publishing variant: ${variant.name}"
-        println "AAR file: ${outputFile}"
+    // 创建单个发布配置（所有变体共享同一个 Maven 坐标）
+    publishing {
+        publications {
+            create("libraryPublication", MavenPublication) {
+                groupId = project.group
+                artifactId = project.name  // 只使用项目名称作为 artifactId
+                version = android.defaultConfig.versionName
 
-        publishing {
-            publications {
-                create("${variant.name}Publication", MavenPublication) {
-                    groupId = project.group
-                    artifactId = "${project.name}-${variant.name.toLowerCase()}"
-                    version = android.defaultConfig.versionName
+                // 为每个变体添加一个 artifact
+                variants.each { variant ->
+                    // 获取实际生成的 AAR 文件
+                    def outputFile = variant.outputs.first().outputFile
 
-                    // 使用实际生成的 AAR 文件
+                    println "Adding variant: ${variant.name}"
+                    println "AAR file: ${outputFile}"
+
+                    // 使用变体名称作为分类器(classifier)
                     artifact(outputFile) {
+                        classifier = variant.name.toLowerCase()
                         builtBy variant.assembleProvider.get()
                     }
+                }
 
-                    // 可选：添加 POM 依赖
-                    pom.withXml {
-                        def dependenciesNode = asNode().appendNode('dependencies')
-                        configurations.implementation.allDependencies.each { dep ->
-                            if (dep.group != null && dep.name != null && dep.version != null) {
-                                def dependencyNode = dependenciesNode.appendNode('dependency')
-                                dependencyNode.appendNode('groupId', dep.group)
-                                dependencyNode.appendNode('artifactId', dep.name)
-                                dependencyNode.appendNode('version', dep.version)
-                            }
+                // 添加 POM 依赖
+                pom.withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    configurations.implementation.allDependencies.each { dep ->
+                        if (dep.group != null && dep.name != null && dep.version != null) {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', dep.group)
+                            dependencyNode.appendNode('artifactId', dep.name)
+                            dependencyNode.appendNode('version', dep.version)
                         }
                     }
                 }
             }
         }
-    }
 
-    publishing {
+        // 配置仓库
         repositories {
             mavenLocal()
         }
     }
 }
 
-task generateSourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    archiveClassifier = 'sources'
-}
-
-// 修正的任务依赖关系
 tasks.withType(PublishToMavenRepository) { publishTask ->
-    // 获取发布任务对应的变体名称
-    def publicationName = publishTask.publication?.name
-    if (publicationName && publicationName.endsWith('Publication')) {
-        def variantName = publicationName.replace('Publication', '')
-        def assembleTask = tasks.findByName("assemble${variantName.capitalize()}")
-        if (assembleTask) {
-            dependsOn assembleTask
-        } else {
-            logger.warn("Assemble task for variant '${variantName}' not found.")
+    if (publishTask.publication?.name == "libraryPublication") {
+        dependsOn tasks.matching { task ->
+            task.name.startsWith('assemble') &&
+                    (task.name.endsWith('Debug') || task.name.endsWith('Release'))
         }
     }
 }
