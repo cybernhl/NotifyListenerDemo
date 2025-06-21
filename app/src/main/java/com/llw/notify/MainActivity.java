@@ -1,34 +1,26 @@
 package com.llw.notify;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationManagerCompat;
-
-import android.app.Activity;
-import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
 import android.provider.Settings;
 import android.service.notification.StatusBarNotification;
-import android.util.Log;
 import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
 
-import static com.llw.notify.NotifyHelper.*;
-
 import com.llw.notify.databinding.ActivityMainBinding;
+
+import idv.neo.service.notificationlistener.NotifyHelper;
+import idv.neo.service.notificationlistener.NotifyListener;
+import idv.neo.service.notificationlistener.NotifyService;
 
 public class MainActivity extends AppCompatActivity implements NotifyListener {
     private final String TAG="MainActivity";
